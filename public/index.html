@@ -498,7 +498,7 @@
         let currentWeekNum = getWeekNumber(new Date());
 
         // API Base URL
-        const API_BASE = '/api';
+        const API_BASE = '';
 
         // API fonksiyonları
         async function apiGet(endpoint) {
@@ -609,14 +609,17 @@
                 return;
             }
             
-            // Yeni sürücüyü mevcut sürücü pozisyonuna getirmek için
-            // rotationStartWeek'i ayarla (diziyi DEĞİŞTİRMEDEN)
-            // Formül: rotationStartWeek = targetWeek + (users.length - newIndex)
-            settings.rotationStartWeek = targetWeek + (settings.users.length - newIndex);
+            // Değişikliği yapan kişiyi belirle (şu an sistemi kullanan kişi = mevcut sürücü)
+            const changerName = driverName;
 
             try {
-                await apiPost('/settings', settings);
-                showStatus(`${driverName} yerine ${newDriverName} bu haftanın sürücüsü olarak ayarlandı!`, 'success');
+                // Yeni API endpoint'ini kullan
+                const result = await apiPost('/api/change-driver', {
+                    newDriverIndex: newIndex,
+                    changerName: changerName
+                });
+                
+                showStatus(result.message, 'success');
                 await loadSettings();
             } catch (error) {
                 showStatus('Hata: ' + error.message, 'error');
@@ -658,7 +661,7 @@
         // Ayarları yükle
         async function loadSettings() {
             try {
-                settings = await apiGet('/settings');
+                settings = await apiGet('/api/settings');
                 updateUserList();
                 updateDriverDisplay();
             } catch (error) {
@@ -732,7 +735,7 @@
                     showStatus(`${oldName} güncellendi!`, 'success');
                 }
                 
-                await apiPost('/settings', settings);
+                await apiPost('/api/settings', settings);
                 closeUserModal();
                 loadSettings();
             } catch (error) {
@@ -748,7 +751,7 @@
             settings.users.splice(index, 1);
             
             try {
-                await apiPost('/settings', settings);
+                await apiPost('/api/settings', settings);
                 showStatus(`${deletedName} silindi!`, 'success');
                 loadSettings();
             } catch (error) {
@@ -830,7 +833,7 @@
             const message = `🚗 *Bu Haftanın Sürücüsü*\n\n` +
                 `📅 *Tarih:* ${formatDate(weekDates.start)} - ${formatDate(weekDates.end)}\n` +
                 `👤 *Sürücü:* ${driver.name}\n\n` +
-                `_Hayırlı Yolculuklar_`;
+                `_Not: Arabalı işe gidiş sistemi ile hazırlanmıştır._`;
 
             try {
                 const result = await apiPost('/send-message', {
