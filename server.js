@@ -115,7 +115,8 @@ if (!fs.existsSync(SETTINGS_FILE)) {
         reminderMinute: 0,
         users: [],
         rotationStartWeek: 1,
-        rotationStartYear: 2025
+        rotationStartYear: 2025,
+        lastReminderDate: ''
     };
     fs.writeFileSync(SETTINGS_FILE, JSON.stringify(initialSettings, null, 2));
 }
@@ -168,18 +169,9 @@ app.post('/api/change-driver', async (req, res) => {
         }
         
         // ADİL ROTASYON SİSTEMİ - GÜVENLİ ALGORİTMA
-        // Yeni sürücü bu haftanın sürücüsü olur (index 0)
-        // Değişikliği yapan kişi gelecek hafta sürücü olur (index 1)
-        // Diğer kişiler sırasıyla devam eder
-        
-        // Önce tüm kullanıcıları al
         const newDriverUser = settings.users[newDriverIndex];
         const changerUser = settings.users.find(u => u.name === changer);
         
-        // Yeni sıralı listeyi oluştur:
-        // 1. Yeni sürücü (başa)
-        // 2. Değişikliği yapan (ikinci sıraya)
-        // 3. Diğerleri (sırayla, yeni sürücü ve değiştiren hariç)
         const newOrder = [];
         newOrder.push(newDriverUser);
         
@@ -187,7 +179,6 @@ app.post('/api/change-driver', async (req, res) => {
             newOrder.push(changerUser);
         }
         
-        // Diğer kullanıcıları ekle (yeni sürücü ve değiştiren hariç)
         for (const user of settings.users) {
             if (user.name !== newDriverUser.name && 
                 (!changerUser || user.name !== changerUser.name)) {
@@ -196,12 +187,9 @@ app.post('/api/change-driver', async (req, res) => {
         }
         
         settings.users = newOrder;
-        
-        // Rotasyon başlangıç haftasını sıfırla (bu haftadan itibaren)
         settings.rotationStartWeek = currentWeekNum;
         settings.rotationStartYear = currentYear;
         
-        // Ayarları kaydet
         fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
         
         // Telegram bildirimi gönder
@@ -319,20 +307,27 @@ function sendScheduledReminder() {
         
         sendTelegramMessage(settings.botToken, settings.chatId, message);
         console.log(`Hatırlatma mesajı gönderildi: ${driver.name}`);
+        
+        // Hatırlatma tarihini dosyaya kaydet
+        const todayStr = new Date().toISOString().split('T')[0];
+        settings.lastReminderDate = todayStr;
+        fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+        
     } catch (error) {
         console.error('Hatırlatma hatası:', error.message);
     }
 }
 
 // Her dakika kontrol et ve hatırlatma zamanı geldiyse gönder
-let lastReminderDate = '';
 cron.schedule('* * * * *', () => {
     const now = new Date();
     const settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'));
     
-    // Bugün hatırlatma gönderildi mi kontrol et
     const todayStr = now.toISOString().split('T')[0];
-    if (lastReminderDate === todayStr) {
+    const lastReminder = settings.lastReminderDate || '';
+    
+    // Bugün hatırlatma gönderildi mi kontrol et
+    if (lastReminder === todayStr) {
         return; // Bugün zaten gönderildi
     }
     
@@ -342,7 +337,6 @@ cron.schedule('* * * * *', () => {
         now.getMinutes() === parseInt(settings.reminderMinute)) {
         
         sendScheduledReminder();
-        lastReminderDate = todayStr;
         console.log(`Hatırlatma planlandı: ${settings.reminderDay} günü, ${settings.reminderHour}:${settings.reminderMinute}`);
     }
 });
