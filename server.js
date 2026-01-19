@@ -167,26 +167,35 @@ app.post('/api/change-driver', async (req, res) => {
             return res.status(400).json({ error: 'Bu kişi zaten bu haftanın sürücüsü' });
         }
         
-        // ADİL ROTASYON SİSTEMİ
+        // ADİL ROTASYON SİSTEMİ - GÜVENLİ ALGORİTMA
         // Yeni sürücü bu haftanın sürücüsü olur (index 0)
         // Değişikliği yapan kişi gelecek hafta sürücü olur (index 1)
         // Diğer kişiler sırasıyla devam eder
         
-        // Önce değişikliği yapan kişiyi listeden çıkar
-        const changerIndex = settings.users.findIndex(u => u.name === changer);
-        let changerUser = null;
-        if (changerIndex !== -1) {
-            changerUser = settings.users.splice(changerIndex, 1)[0];
+        // Önce tüm kullanıcıları al
+        const newDriverUser = settings.users[newDriverIndex];
+        const changerUser = settings.users.find(u => u.name === changer);
+        
+        // Yeni sıralı listeyi oluştur:
+        // 1. Yeni sürücü (başa)
+        // 2. Değişikliği yapan (ikinci sıraya)
+        // 3. Diğerleri (sırayla, yeni sürücü ve değiştiren hariç)
+        const newOrder = [];
+        newOrder.push(newDriverUser);
+        
+        if (changerUser && changerUser.name !== newDriverUser.name) {
+            newOrder.push(changerUser);
         }
         
-        // Yeni sürücüyü başa al
-        const newDriverUser = settings.users.splice(newDriverIndex, 1)[0];
-        settings.users.unshift(newDriverUser);
-        
-        // Değişikliği yapan kişiyi ikinci sıraya ekle (gelecek hafta)
-        if (changerUser) {
-            settings.users.splice(1, 0, changerUser);
+        // Diğer kullanıcıları ekle (yeni sürücü ve değiştiren hariç)
+        for (const user of settings.users) {
+            if (user.name !== newDriverUser.name && 
+                (!changerUser || user.name !== changerUser.name)) {
+                newOrder.push(user);
+            }
         }
+        
+        settings.users = newOrder;
         
         // Rotasyon başlangıç haftasını sıfırla (bu haftadan itibaren)
         settings.rotationStartWeek = currentWeekNum;
