@@ -599,22 +599,25 @@
                 return;
             }
 
-            // Kullanıcının sırasını değiştir
+            // Mevcut ve yeni sürücü isimlerini al
             const driverName = settings.users[current.index].name;
             const newDriverName = settings.users[newIndex].name;
             
-            // Sürücüyü en başa alarak rotasyonu değiştir
-            const userToMove = settings.users.splice(current.index, 1)[0];
-            settings.users.unshift(userToMove);
-
-            // Rotasyon başlangıcını güncelle
-            const baseWeek = settings.rotationStartWeek || 1;
-            settings.rotationStartWeek = targetWeek;
+            // Aynı kişiyi seçerse uyarı ver
+            if (current.index === newIndex) {
+                showStatus(`${newDriverName} zaten bu haftanın sürücüsü!`, 'error');
+                return;
+            }
+            
+            // Yeni sürücüyü mevcut sürücü pozisyonuna getirmek için
+            // rotationStartWeek'i ayarla (diziyi DEĞİŞTİRMEDEN)
+            // Formül: rotationStartWeek = targetWeek + (users.length - newIndex)
+            settings.rotationStartWeek = targetWeek + (settings.users.length - newIndex);
 
             try {
                 await apiPost('/settings', settings);
                 showStatus(`${driverName} yerine ${newDriverName} bu haftanın sürücüsü olarak ayarlandı!`, 'success');
-                loadSettings();
+                await loadSettings();
             } catch (error) {
                 showStatus('Hata: ' + error.message, 'error');
             }
