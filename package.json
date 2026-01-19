@@ -1,7 +1,7 @@
 {
   "name": "carpool-bot",
   "version": "1.0.0",
-  "description": "Araba paylaşımlı işe gidiş takip sistemi",
+  "description": "Araba işe gidiş takip sistemi",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
