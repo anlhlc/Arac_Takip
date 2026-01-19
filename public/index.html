@@ -789,7 +789,7 @@
             settings.rotationStartWeek = parseInt(document.getElementById('rotationStartWeek').value);
 
             try {
-                const result = await apiPost('/settings', settings);
+                const result = await apiPost('/api/settings', settings);
                 showStatus('Ayarlar başarıyla kaydedildi!', 'success');
                 closeSettingsModal();
                 loadSettings();
@@ -810,7 +810,7 @@
             }
 
             try {
-                const result = await apiPost('/test-bot', { botToken, chatId });
+                const result = await apiPost('/api/test-bot', { botToken, chatId });
                 showStatus(`✅ ${result.message} (Bot: @${result.botName})`, 'success');
             } catch (error) {
                 showStatus('❌ ' + error.message, 'error');
@@ -836,7 +836,7 @@
                 `_Not: Arabalı işe gidiş sistemi ile hazırlanmıştır._`;
 
             try {
-                const result = await apiPost('/send-message', {
+                const result = await apiPost('/api/send-message', {
                     botToken,
                     chatId,
                     message
