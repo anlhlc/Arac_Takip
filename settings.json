@@ -1,0 +1,11 @@
+{
+  "botToken": "",
+  "chatId": "",
+  "reminderDay": 5,
+  "reminderHour": 18,
+  "reminderMinute": 0,
+  "users": [],
+  "rotationStartWeek": 1,
+  "rotationStartYear": 2025,
+  "lastReminderDate": ""
+}
